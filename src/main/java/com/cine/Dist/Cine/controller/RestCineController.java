@@ -6,6 +6,8 @@ import Cine.Pelicula;
 import Cine.Tanda;
 import jakarta.annotation.PostConstruct;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,99 +57,190 @@ public class RestCineController {
     }
 
     @GetMapping("/peliculas")
-    public List<Pelicula> getPeliculas() {
-        return peliculas;
+    public ResponseEntity<List<Pelicula>> getPeliculas() {
+        return ResponseEntity.ok(peliculas);
     }
 
     @GetMapping("/peliculas/{peliculaId}/tanda/{tandaId}")
-    public Tanda getTandaByPeliculaIdAndTandaId(@PathVariable int peliculaId, @PathVariable int tandaId) {
-        for (Pelicula pelicula : peliculas) {
-            if (pelicula.getId() == peliculaId) {
-                for (Tanda tanda : pelicula.getTandas()) {
-                    if (tanda.getId() == tandaId) {
-                        return tanda;
+    public ResponseEntity<Tanda> getTandaByPeliculaIdAndTandaId(@PathVariable int peliculaId, @PathVariable int tandaId) {
+        try {
+            for (Pelicula pelicula : peliculas) {
+                if (pelicula.getId() == peliculaId) {
+                    for (Tanda tanda : pelicula.getTandas()) {
+                        if (tanda.getId() == tandaId) {
+                            return ResponseEntity.ok(tanda);
+                        }
                     }
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
-                throw new RuntimeException("Tanda no encontrada");
             }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        throw new RuntimeException("Pelicula no encontrada");
     }
 
     @PostMapping("/peliculas/{peliculaId}/tanda/{tandaId}/asientos/ocupar")
-    public String ocuparAsientos(@PathVariable int peliculaId, @PathVariable int tandaId, @RequestBody List<String> asientos) {
-        for (Pelicula pelicula : peliculas) {
-            if (pelicula.getId() == peliculaId) {
-                for (Tanda tanda : pelicula.getTandas()) {
-                    if (tanda.getId() == tandaId) {
-                        for (String asientoIdentificador : asientos) {
-                            boolean asientoEncontrado = false;
-                            for (Asientos asiento : tanda.getAsientos()) {
-                                if (asiento.getIdentificador().equals(asientoIdentificador)) {
-                                    asiento.setOcupado(true);
-                                    asientoEncontrado = true;
-                                    break;
+    public ResponseEntity<String> ocuparAsientos(@PathVariable int peliculaId, @PathVariable int tandaId, @RequestBody List<String> asientos) {
+        String validationError = validateAsientos(asientos);
+        if (validationError != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(validationError);
+        }
+
+        try {
+            for (Pelicula pelicula : peliculas) {
+                if (pelicula.getId() == peliculaId) {
+                    for (Tanda tanda : pelicula.getTandas()) {
+                        if (tanda.getId() == tandaId) {
+                            for (String asientoIdentificador : asientos) {
+                                boolean asientoEncontrado = false;
+                                for (Asientos asiento : tanda.getAsientos()) {
+                                    if (asiento.getIdentificador().equals(asientoIdentificador)) {
+                                        asiento.setOcupado(true);
+                                        asientoEncontrado = true;
+                                        break;
+                                    }
+                                }
+                                if (!asientoEncontrado) {
+                                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Asiento " + asientoIdentificador + " no encontrado");
                                 }
                             }
-                            if (!asientoEncontrado) {
-                                return "Asiento " + asientoIdentificador + " no encontrado";
-                            }
+                            return ResponseEntity.ok("Asientos ocupados correctamente");
                         }
-                        return "Asientos ocupados correctamente";
                     }
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tanda no encontrada");
                 }
-                return "Tanda no encontrada";
             }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pelicula no encontrada");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al ocupar asientos");
         }
-        return "Pelicula no encontrada";
     }
 
     @PutMapping("/peliculas/{peliculaId}/tanda/{tandaId}/asientos/actualizar")
-    public String actualizarAsientosOcupados(@PathVariable int peliculaId, @PathVariable int tandaId, @RequestBody List<String> asientos) {
-        for (Pelicula pelicula : peliculas) {
-            if (pelicula.getId() == peliculaId) {
-                for (Tanda tanda : pelicula.getTandas()) {
-                    if (tanda.getId() == tandaId) {
-                        for (String asientoIdentificador : asientos) {
-                            boolean asientoEncontrado = false;
-                            for (Asientos asiento : tanda.getAsientos()) {
-                                if (asiento.getIdentificador().equals(asientoIdentificador)) {
-                                    asiento.setOcupado(true);
-                                    asientoEncontrado = true;
-                                    break;
+    public ResponseEntity<String> actualizarAsientosOcupados(@PathVariable int peliculaId, @PathVariable int tandaId, @RequestBody List<String> asientos) {
+        String validationError = validateAsientos(asientos);
+        if (validationError != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(validationError);
+        }
+
+        try {
+            for (Pelicula pelicula : peliculas) {
+                if (pelicula.getId() == peliculaId) {
+                    for (Tanda tanda : pelicula.getTandas()) {
+                        if (tanda.getId() == tandaId) {
+                            for (String asientoIdentificador : asientos) {
+                                boolean asientoEncontrado = false;
+                                for (Asientos asiento : tanda.getAsientos()) {
+                                    if (asiento.getIdentificador().equals(asientoIdentificador)) {
+                                        asiento.setOcupado(true);
+                                        asientoEncontrado = true;
+                                        break;
+                                    }
+                                }
+                                if (!asientoEncontrado) {
+                                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Asiento " + asientoIdentificador + " no encontrado");
                                 }
                             }
-                            if (!asientoEncontrado) {
-                                return "Asiento " + asientoIdentificador + " no encontrado";
-                            }
+                            return ResponseEntity.ok("Asientos actualizados a ocupado correctamente");
                         }
-                        return "Asientos actualizados a ocupado correctamente";
                     }
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tanda no encontrada");
                 }
-                return "Tanda no encontrada";
             }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pelicula no encontrada");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar asientos");
         }
-        return "Pelicula no encontrada";
     }
 
     @PostMapping("/compras")
-    public String registrarCompra(@RequestBody Compra compra) {
-        compras.add(compra);
-        return "Compra registrada correctamente";
+    public ResponseEntity<String> registrarCompra(@RequestBody Compra compra) {
+        // Validación manual
+        String validationError = validateCompra(compra);
+        if (validationError != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(validationError);
+        }
+
+        try {
+            compras.add(compra);
+            return ResponseEntity.ok("Compra registrada correctamente");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al registrar la compra");
+        }
     }
 
     @GetMapping("/compras")
-    public List<Compra> getCompras() {
-        return compras;
+    public ResponseEntity<List<Compra>> getCompras() {
+        return ResponseEntity.ok(compras);
     }
 
     @GetMapping("/compras/{numeroOrden}")
-    public Compra getCompraByNumeroOrden(@PathVariable int numeroOrden) {
-        for (Compra compra : compras) {
-            if (compra.getNumeroOrden() == numeroOrden) {
-                return compra;
+    public ResponseEntity<Compra> getCompraByNumeroOrden(@PathVariable int numeroOrden) {
+        if (numeroOrden <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
+        try {
+            for (Compra compra : compras) {
+                if (compra.getNumeroOrden() == numeroOrden) {
+                    return ResponseEntity.ok(compra);
+                }
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    private String validateCompra(Compra compra) {
+        // Validación del número de orden (debe ser un número positivo)
+        if (compra.getNumeroOrden() <= 0) {
+            return "Número de orden debe ser un número positivo";
+        }
+        // Validación de nombre de la película (cadena no vacía)
+        if (compra.getNombrePelicula() == null || compra.getNombrePelicula().isEmpty()) {
+            return "Nombre de la película es requerido";
+        }
+        // Validación de la lista de asientos (no vacía y todos los elementos son cadenas no vacías)
+        if (compra.getAsientos() == null || compra.getAsientos().isEmpty()) {
+            return "Lista de asientos es requerida";
+        } else {
+            for (String asiento : compra.getAsientos()) {
+                if (asiento == null || asiento.isEmpty()) {
+                    return "Cada asiento debe ser una cadena no vacía";
+                }
             }
         }
-        throw new RuntimeException("Compra no encontrada");
+        // Validación del nombre completo (cadena no vacía)
+        if (compra.getNombreCompleto() == null || compra.getNombreCompleto().isEmpty()) {
+            return "Nombre completo es requerido";
+        }
+        // Validación del correo (cadena no vacía y debe contener '@')
+        if (compra.getCorreo() == null || compra.getCorreo().isEmpty() || !compra.getCorreo().contains("@")) {
+            return "Correo válido es requerido";
+        }
+        // Validación de la hora (cadena no vacía)
+        if (compra.getTime() == null || compra.getTime().isEmpty()) {
+            return "Hora es requerida";
+        }
+        // Validación del total (debe ser un número positivo)
+        if (compra.getTotal() <= 0) {
+            return "Total debe ser un número positivo";
+        }
+        return null; // No hay errores
+    }
+
+    private String validateAsientos(List<String> asientos) {
+        if (asientos == null || asientos.isEmpty()) {
+            return "Lista de asientos es requerida";
+        } else {
+            for (String asiento : asientos) {
+                if (asiento == null || asiento.isEmpty()) {
+                    return "Cada asiento debe ser una cadena no vacía";
+                }
+            }
+        }
+        return null;
     }
 }

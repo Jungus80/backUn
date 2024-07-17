@@ -9,14 +9,16 @@ public class Compra {
     private List<String> asientos;
     private String nombreCompleto;
     private String correo;
+    private int total; // Nuevo atributo para el total de la compra
 
-    public Compra(int numeroOrden, String nombrePelicula, List<String> asientos, String nombreCompleto, String correo ,String time) {
+    public Compra(int numeroOrden, String nombrePelicula, List<String> asientos, String nombreCompleto, String correo, String time, int total) {
         this.numeroOrden = numeroOrden;
         this.nombrePelicula = nombrePelicula;
         this.asientos = asientos;
         this.nombreCompleto = nombreCompleto;
         this.correo = correo;
         this.time = time;
+        this.total = total; // Inicializar el nuevo atributo
     }
 
     // Getters y setters
@@ -60,11 +62,19 @@ public class Compra {
         this.correo = correo;
     }
 
-    public String getTime(){
+    public String getTime() {
         return time;
     }
 
-    public void setTime(String time){
+    public void setTime(String time) {
         this.time = time;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
     }
 }
